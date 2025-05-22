@@ -1,4 +1,15 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { db } from '../components/firebase'; 
+import {
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query
+} from 'firebase/firestore';
+import { useAuth } from './AuthContext';
 
 const ProjectContext = createContext(null);
 
@@ -11,40 +22,66 @@ export const useProject = () => {
 };
 
 export const ProjectProvider = ({ children }) => {
+  const { currentUser } = useAuth();
   const [projectItems, setProjectItems] = useState([]);
   const [otherCosts, setOtherCosts] = useState([]);
 
-  const addProjectItem = useCallback((item) => {
-    setProjectItems(prev => [...prev, { ...item, id: Date.now() }]);
-  }, []);
+  // Firestore collection references
+  const getItemsCollection = () => collection(db, 'users', currentUser.uid, 'items');
+  const getOtherCostsCollection = () => collection(db, 'users', currentUser.uid, 'otherCosts');
 
-  const updateProjectItem = useCallback((id, updatedItem) => {
-    setProjectItems(prev => 
-      prev.map(item => item.id === id ? { ...item, ...updatedItem } : item)
-    );
-  }, []);
+  // Realtime listeners
+  useEffect(() => {
+    if (!currentUser) return;
 
-  const deleteProjectItem = useCallback((id) => {
-    setProjectItems(prev => prev.filter(item => item.id !== id));
-  }, []);
+    const itemsUnsub = onSnapshot(query(getItemsCollection()), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setProjectItems(items);
+    });
 
-  const addOtherCost = useCallback((cost) => {
-    setOtherCosts(prev => [...prev, { ...cost, id: Date.now() }]);
-  }, []);
+    const costsUnsub = onSnapshot(query(getOtherCostsCollection()), (snapshot) => {
+      const costs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setOtherCosts(costs);
+    });
 
-  const updateOtherCost = useCallback((id, updatedCost) => {
-    setOtherCosts(prev => 
-      prev.map(cost => cost.id === id ? { ...cost, ...updatedCost } : cost)
-    );
-  }, []);
+    return () => {
+      itemsUnsub();
+      costsUnsub();
+    };
+  }, [currentUser]);
 
-  const deleteOtherCost = useCallback((id) => {
-    setOtherCosts(prev => prev.filter(cost => cost.id !== id));
-  }, []);
+  // CRUD operations
+  const addProjectItem = async (item) => {
+    await addDoc(getItemsCollection(), item);
+  };
+
+  const updateProjectItem = async (id, updatedItem) => {
+    const ref = doc(db, 'users', currentUser.uid, 'items', id);
+    await updateDoc(ref, updatedItem);
+  };
+
+  const deleteProjectItem = async (id) => {
+    const ref = doc(db, 'users', currentUser.uid, 'items', id);
+    await deleteDoc(ref);
+  };
+
+  const addOtherCost = async (cost) => {
+    await addDoc(getOtherCostsCollection(), cost);
+  };
+
+  const updateOtherCost = async (id, updatedCost) => {
+    const ref = doc(db, 'users', currentUser.uid, 'otherCosts', id);
+    await updateDoc(ref, updatedCost);
+  };
+
+  const deleteOtherCost = async (id) => {
+    const ref = doc(db, 'users', currentUser.uid, 'otherCosts', id);
+    await deleteDoc(ref);
+  };
 
   const getTotalProjectCost = useCallback(() => {
-    const projectTotal = projectItems.reduce((sum, item) => sum + Number(item.cost), 0);
-    const otherTotal = otherCosts.reduce((sum, cost) => sum + Number(cost.amount), 0);
+    const projectTotal = projectItems.reduce((sum, item) => sum + Number(item.cost || 0), 0);
+    const otherTotal = otherCosts.reduce((sum, cost) => sum + Number(cost.amount || 0), 0);
     return projectTotal + otherTotal;
   }, [projectItems, otherCosts]);
 

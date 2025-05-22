@@ -29,7 +29,6 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Get the page they were trying to access or default to dashboard
   const from = location.state?.from?.pathname || '/dashboard';
   
   const validate = () => {
@@ -59,27 +58,16 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      const success = login(email, password);
+      await login(email, password);  // Await login here
       
-      if (success) {
-        toast({
-          title: 'Login successful',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        
-        // Navigate to the page they were trying to access, or dashboard
-        navigate(from, { replace: true });
-      } else {
-        toast({
-          title: 'Login failed',
-          description: 'Invalid email or password',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-      }
+      toast({
+        title: 'Login successful',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      
+      navigate(from, { replace: true });
     } catch (error) {
       toast({
         title: 'Login failed',

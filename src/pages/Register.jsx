@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { 
-  Box, 
-  Button, 
-  Container, 
-  Heading, 
-  Text, 
+import {
+  Box,
+  Button,
+  Container,
+  Heading,
+  Text,
   VStack,
   useToast,
   Flex,
@@ -16,7 +16,6 @@ import { useAuth } from '../contexts/AuthContext';
 import FormField from '../components/FormField';
 import PageTransition from '../components/PageTransition';
 
-
 const MotionBox = motion(Box);
 
 const Register = () => {
@@ -25,68 +24,46 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  
-  const { register } = useAuth();
+
+  const { signup } = useAuth(); 
   const toast = useToast();
   const navigate = useNavigate();
-  
+
   const validate = () => {
     const newErrors = {};
-    
-    if (!email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email is invalid';
-    }
-    
-    if (!password) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    
-    if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (password !== confirmPassword) {
+
+    if (!email) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'Invalid email';
+
+    if (!password) newErrors.password = 'Password is required';
+    else if (password.length < 6) newErrors.password = 'At least 6 characters';
+
+    if (password !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validate()) return;
-    
+
     setIsLoading(true);
-    
     try {
-      const success = register(email, password);
-      
-      if (success) {
-        toast({
-          title: 'Account created successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        
-        navigate('/dashboard');
-      } else {
-        toast({
-          title: 'Registration failed',
-          description: 'Unable to create account',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
-      }
+      await signup(email, password);
+      toast({
+        title: 'Account created successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate('/dashboard');
     } catch (error) {
       toast({
         title: 'Registration failed',
-        description: error.message || 'An error occurred during registration',
+        description: error.message,
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -94,16 +71,11 @@ const Register = () => {
     } finally {
       setIsLoading(false);
     }
-    
   };
-  
+
   return (
     <PageTransition>
-      <Box 
-        bg="gray.50" 
-        minH="calc(100vh - 72px)"
-        py={{ base: 10, md: 20 }}
-      >
+      <Box bg="gray.50" minH="calc(100vh - 72px)" py={{ base: 10, md: 20 }}>
         <Container maxW="md">
           <MotionBox
             initial={{ opacity: 0, y: 20 }}
@@ -123,20 +95,19 @@ const Register = () => {
                   Join us to start tracking your project costs
                 </Text>
               </VStack>
-              
+
               <form onSubmit={handleSubmit}>
                 <VStack spacing={4} align="stretch">
                   <FormField
                     id="email"
                     label="Email"
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     error={errors.email}
                     isRequired
                   />
-                  
                   <FormField
                     id="password"
                     label="Password"
@@ -147,7 +118,6 @@ const Register = () => {
                     error={errors.password}
                     isRequired
                   />
-                  
                   <FormField
                     id="confirmPassword"
                     label="Confirm Password"
@@ -158,11 +128,10 @@ const Register = () => {
                     error={errors.confirmPassword}
                     isRequired
                   />
-                  
-                  <Button 
-                    type="submit" 
-                    colorScheme="brand" 
-                    size="lg" 
+                  <Button
+                    type="submit"
+                    colorScheme="brand"
+                    size="lg"
                     width="full"
                     mt={4}
                     isLoading={isLoading}
@@ -172,7 +141,7 @@ const Register = () => {
                   </Button>
                 </VStack>
               </form>
-              
+
               <Flex justify="center" mt={4}>
                 <Text>
                   Already have an account?{' '}

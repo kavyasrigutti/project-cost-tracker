@@ -15,7 +15,7 @@ import {
   Stack,
   useBreakpointValue
 } from '@chakra-ui/react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { HiOutlineUser, HiMenu, HiX } from 'react-icons/hi';
 import { motion } from 'framer-motion';
@@ -28,6 +28,16 @@ const Navbar = () => {
   const bgColor = useColorModeValue('white', 'gray.800');
   const textColor = useColorModeValue('gray.800', 'white');
   const isMobile = useBreakpointValue({ base: true, md: false });
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   return (
     <Box
@@ -92,7 +102,7 @@ const Navbar = () => {
                     {user.email}
                   </MenuButton>
                   <MenuList>
-                    <MenuItem onClick={logout}>Logout</MenuItem>
+                    <MenuItem onClick={handleLogout}>Logout</MenuItem>
                   </MenuList>
                 </Menu>
               </>
@@ -146,7 +156,7 @@ const Navbar = () => {
                     variant="outline" 
                     colorScheme="brand" 
                     size="sm" 
-                    onClick={logout}
+                    onClick={handleLogout}
                   >
                     Logout
                   </Button>

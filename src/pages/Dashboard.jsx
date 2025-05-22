@@ -13,11 +13,10 @@ import {
   StatHelpText,
   Button,
   useDisclosure,
-  Icon,
   Flex,
   useColorModeValue
 } from '@chakra-ui/react';
-import { HiCurrencyDollar, HiClipboardCheck, HiPlus } from 'react-icons/hi';
+import { HiPlus } from 'react-icons/hi';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useProject } from '../contexts/ProjectContext';
@@ -29,10 +28,10 @@ const MotionBox = motion(Box);
 const MotionCard = motion(Card);
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const { 
-    projectItems, 
-    otherCosts, 
+  const { currentUser } = useAuth();
+  const {
+    projectItems = [],
+    otherCosts = [],
     addProjectItem,
     updateProjectItem,
     deleteProjectItem,
@@ -41,13 +40,13 @@ const Dashboard = () => {
     deleteOtherCost,
     getTotalProjectCost
   } = useProject();
-  
+
   const {
     isOpen: isProjectModalOpen,
     onOpen: onProjectModalOpen,
     onClose: onProjectModalClose
   } = useDisclosure();
-  
+
   const {
     isOpen: isOtherCostModalOpen,
     onOpen: onOtherCostModalOpen,
@@ -55,7 +54,7 @@ const Dashboard = () => {
   } = useDisclosure();
 
   const cardBg = useColorModeValue('white', 'gray.700');
-  
+
   const projectColumns = [
     { key: 'name', label: 'Name' },
     { key: 'cost', label: 'Cost', prefix: '$', type: 'number' }
@@ -75,7 +74,7 @@ const Dashboard = () => {
     { key: 'description', label: 'Description', placeholder: 'Enter description' },
     { key: 'amount', label: 'Amount', type: 'number', placeholder: 'Enter amount' }
   ];
-  
+
   return (
     <PageTransition>
       <Box bg="gray.50" minH="calc(100vh - 72px)" py={8}>
@@ -88,14 +87,12 @@ const Dashboard = () => {
             >
               <VStack align="flex-start" spacing={1}>
                 <Heading size="lg" color="gray.700">
-                  Welcome to your Dashboard, {user.email}
+                  Welcome to your Dashboard, {currentUser?.email ?? 'User'}
                 </Heading>
-                <Text color="gray.500">
-                  Track and manage your project costs
-                </Text>
+                <Text color="gray.500">Track and manage your project costs</Text>
               </VStack>
             </MotionBox>
-            
+
             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
               <MotionCard
                 bg={cardBg}
@@ -139,7 +136,9 @@ const Dashboard = () => {
                 <CardBody>
                   <Stat>
                     <StatLabel>Total Cost</StatLabel>
-                    <StatNumber>${getTotalProjectCost()}</StatNumber>
+                    <StatNumber>
+                      ${getTotalProjectCost?.() ?? 0}
+                    </StatNumber>
                     <StatHelpText>Combined Total</StatHelpText>
                   </Stat>
                 </CardBody>

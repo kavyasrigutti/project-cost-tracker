@@ -1,52 +1,52 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth';
+import { auth } from '../components/firebase'; // make sure you have a configured firebase.js
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    // Check if we have a user in localStorage
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = useCallback((email, password) => {
-    // In a real app, we'd make an API call here
-    // For this demo, we'll just store the email
-    const userData = { email };
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
-    return true;
-  }, []);
+  const signup = (email, password) => {
+    console.log('signup')
+    return createUserWithEmailAndPassword(auth, email, password);
+  };
 
-  const register = useCallback((email, password) => {
-    // In a real app, we'd make an API call here
-    // For this demo, we'll just store the email
-    const userData = { email };
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
-    return true;
-  }, []);
+  const login = (email, password) => {
+    return signInWithEmailAndPassword(auth, email, password);
+  };
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('user');
-    setUser(null);
+  const logout = () => {
+    return signOut(auth);
+  };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setLoading(false);
+    });
+
+    return unsubscribe;
   }, []);
 
   const value = {
-    user,
-    isAuthenticated: !!user,
+    currentUser,
+    signup,
     login,
-    register,
-    logout,
+    logout
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 };
